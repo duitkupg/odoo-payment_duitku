@@ -15,6 +15,12 @@
         'views/templates.xml',
         'data/duitku_acquirer_data.xml'
     ],
+    'images' : [
+        'static/src/img/duitku_icon.png', 
+        'static/src/thumbnail.png', 
+        'static/description/duitku_icon.png', 
+        'static/description/icon.png'
+        ], 
     'post_init_hook': 'create_missing_journal_for_acquirers',
     'uninstall_hook': 'uninstall_hook',
     'installable': True,
