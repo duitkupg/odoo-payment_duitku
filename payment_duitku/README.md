@@ -1,4 +1,4 @@
-![Duitku](/static/src/img/duitku_icon.png)
+![Duitku](./static/src/img/duitku_icon.png)
 
 Duitku Integration for Odoo payment acquirer
 
