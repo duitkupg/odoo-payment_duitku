@@ -1,12 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <data>
-        <record id="payment_acquirer_duitku" model="payment.acquirer">
+        <record id="payment_provider_duitku" model="payment.provider">
             <field name="name">Duitku Payment</field>
             <field name="image_128" type="base64" file="payment_duitku/static/src/img/duitku_icon.png"/>
-            <field name="provider">duitku</field>
-            <field name="company_id" ref="base.main_company"/>
-            <field name="view_template_id" ref="duitku_form"/>
+            <field name="code">duitku</field>
+            <field name="redirect_form_view_id" ref="redirect_form"/>
         </record>
     </data>
 </odoo>
