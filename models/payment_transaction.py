@@ -150,7 +150,7 @@ class PaymentTransaction(models.Model):
         :rtype: dict
         """
         res = super()._get_specific_rendering_values(processing_values)
-        print("Processing Values--", processing_values)
+        # print("Processing Values--", processing_values)
         if self.provider_code != 'duitku':
             return res
 
@@ -176,6 +176,15 @@ class PaymentTransaction(models.Model):
         payload, headers = self._duitku_prepare_payment_request_payload(processing_values)
         _logger.info("sending '/createInvoice' request for link creation:\n%s", pprint.pformat(payload))
         payment_data = self.provider_id._duitku_make_request('/createInvoice',data=json.dumps(payload),headers=headers)
+
+        # if the merchantOrderId already exists in Duitku and you try to pay again, the createInvoice return
+        # ("MerchantOrderId":"Bill already paid. (Parameter \u0027MerchantOrderId\u0027)")
+        # So her we check, if he response is string thne
+        if isinstance(payment_data, str):
+            self._set_error(payment_data)
+            raise ValidationError(
+                "Duitku: " + _("Create Invoice response %(ref)s.", ref=payment_data)
+            )
 
         self.provider_reference = payment_data.get('reference')
 
@@ -236,17 +245,31 @@ class PaymentTransaction(models.Model):
         if self.provider_code != 'duitku':
             return
 
-        self.duitku_reference = self.provider_reference= notification_data.get('reference')
-        self.duitku_order_id= notification_data.get('merchantOrderId')
+        self.duitku_reference = self.provider_reference = notification_data.get('reference')
+        self.duitku_order_id = notification_data.get('merchantOrderId')
+
+        merchant_code = self.provider_id.duitku_merchant_code
+        merchant_order_id = notification_data.get('merchantOrderId')
+        hashtext = merchant_code + merchant_order_id + self.provider_id.duitku_api_key
+        signature = hashlib.md5(hashtext.encode('utf-8')).hexdigest()
+        playload = {
+            'merchantCode': merchant_code,
+            'merchantOrderId': merchant_order_id,
+            'signature': signature,
+        }
+        headers = {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'Content-Length': str(len(str(playload))),
+        }
 
         payment_status = notification_data.get('resultCode')
 
         if payment_status == '00':
+            self.provider_id._duitku_make_request('/transactionStatus', data=playload, headers=headers)
             self._set_done()
-        elif payment_status == '01':
+        elif payment_status in ('01', '02'):
             self._set_pending(state_message=payment_status.get('statusMessage'))
-        elif payment_status == '02':
-            self._set_canceled(state_message=payment_status.get('statusMessage'))
         else:
             _logger.info(
                 "received data with invalid payment status (%s) for transaction with reference %s",

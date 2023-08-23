@@ -83,14 +83,18 @@ class PaymentProvider(models.Model):
         endpoint = endpoint.strip("/")
         url = urls.url_join(self._duitku_get_api_url(), endpoint)
         try:
-            # response = requests.request(method, url, json=data, headers=headers, timeout=60)
             req = requests.post(url=url, data=data, headers=headers, allow_redirects=False)
             response = req.json()
-            if req.status_code != 200:
-                _logger.info('There was an error when creating a transaction. The data sent was %s',
-                             pprint.pformat(req))
-                _logger.info('Duitku create transaction response %s', pprint.pformat(response))
-            # response.raise_for_status()
+            if endpoint == 'transactionStatus':
+                if response['statusCode'] != '00':
+                    raise ValidationError(_("Payment has not been successfully paid but a callback is triggered."
+                                            "Could be because someone is trying to cheat the system."))
+            if endpoint == 'createInvoice':
+                if req.status_code != 200:
+                    _logger.info('There was an error when creating a transasction. The data sent was %s',
+                                 pprint.pformat(req))
+                    _logger.info('Duitku create transaction response %s', pprint.pformat(response))
+                    raise ValidationError(_("%s") % response)
         except requests.exceptions.RequestException:
             _logger.exception("unable to communicate with Duitku: %s", url)
             raise ValidationError("Dutiku: " + _("Could not establish the connection to the API."))
@@ -98,8 +102,8 @@ class PaymentProvider(models.Model):
             _logger.exception("unable to reach endpoint at %s", url)
             raise ValidationError("Dutiku: " + _("Could not establish the connection to the API."))
         except requests.exceptions.HTTPError as error:
-            if response.statusCode != 200:
-                _logger.exception('There was an error when call %s. The data sent was %s' % (url, data))
-                _logger.exception('Duitku endpoint response %s' % response)
-                raise ValidationError(_("%s") % response)
+            _logger.exception(
+                "invalid API request at %s with data %s: %s", url, data, error.response.text
+            )
+            raise ValidationError("Dutiku: " + _("The communication with the API failed."))
         return response
