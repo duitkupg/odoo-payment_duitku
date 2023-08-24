@@ -42,7 +42,7 @@ class DuitkuCommon(PaymentAcquirerCommon):
             'reference': 'mock_reference'
         }
         mock_api.duitku_create_transaction.return_value = mock_response
-        cls.duitku = cls.env.ref('payment_duitku.payment_acquirer_duitku')
+        cls.duitku = cls.env.ref('payment_duitku.payment_provider_duitku')
         cls.duitku._set_duitku_api(mock_api)
         cls.duitku.write({
             'duitku_merchant_code': 'dummy_code',

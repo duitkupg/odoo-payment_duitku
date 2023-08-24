@@ -1,15 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <data>
-        <template id="duitku_form">
-            <div>
-                <input type="hidden" name="data_set" t-att-data-action-url="tx_url" data-remove-me=""/>
-                <input type="hidden" name="payment_url" t-att-value="payment_url"/>
+         <template id="redirect_form">
+            <form t-att-action="api_url" method="post">
                 <input type="hidden" name="merchantOrderId" t-att-value="merchantOrderId"/>
                 <input type="hidden" name="expiryPeriod" t-att-value="expiryPeriod"/>
                 <input type="hidden" name="reference" t-att-value="reference"/>
                 <input type="hidden" name="callMode" value="True"/>
-            </div>
+            </form>
         </template>
     </data>
 </odoo>

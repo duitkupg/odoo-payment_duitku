@@ -11,11 +11,17 @@
     'version': '1.0.0',
     'depends': ['payment'],
     'data': [
-        'views/views.xml',
-        'views/templates.xml',
-        'data/duitku_acquirer_data.xml'
+        'views/payment_provider_views.xml',
+        'views/payment_duitku_templates.xml',
+        'data/duitku_provider_data.xml'
     ],
-    'post_init_hook': 'create_missing_journal_for_acquirers',
+    'images': [
+        'static/src/img/duitku_icon.png',
+        'static/src/thumbnail.png',
+        'static/description/duitku_icon.png',
+        'static/description/icon.png'
+    ],
+    'post_init_hook': 'post_init_hook',
     'uninstall_hook': 'uninstall_hook',
     'installable': True,
     'application': True,
