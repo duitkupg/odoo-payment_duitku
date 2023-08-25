@@ -71,7 +71,7 @@ class PaymentTransaction(models.Model):
                 'partner_address': _partner_format_address(partner.street, partner.street2),
                 'partner_country_id': partner.country_id.id or self.env.company.country_id.id,
                 'partner_country': partner.country_id,
-                'partner_phone': partner.phone,
+                'partner_phone': partner.phone or partner.mobile,
                 'partner_state': partner.state_id,
                 'billing_partner': billing_partner,
                 'billing_partner_id': partner_id,
@@ -84,7 +84,7 @@ class PaymentTransaction(models.Model):
                 'billing_partner_address': _partner_format_address(billing_partner.street, billing_partner.street2),
                 'billing_partner_country_id': billing_partner.country_id.id,
                 'billing_partner_country': billing_partner.country_id,
-                'billing_partner_phone': billing_partner.phone,
+                'billing_partner_phone': billing_partner.phone or billing_partner.mobile,
                 'billing_partner_state': billing_partner.state_id,
             })
             if values.get('partner_name'):
