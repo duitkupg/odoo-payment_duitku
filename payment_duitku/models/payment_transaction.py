@@ -56,10 +56,14 @@ class PaymentTransaction(models.Model):
         return create_payment_values,headers
     def duitku_prepare_payment_values(self, values):
         partner_id = values.get('partner_id', [])
+        billing_partner_id = values.get('billing_partner_id', partner_id)
         item_details, customer_detail = {}, {}
         if partner_id:
             partner = self.env['res.partner'].browse(partner_id)
-            billing_partner = self.env['res.partner'].browse(partner_id)
+            billing_partner = self.env['res.partner'].browse(billing_partner_id)
+            #Partner Email Address is required for Duitku Payment
+            if not billing_partner.email and not partner.email:
+                raise ValidationError(_('Dutiku: Partner or Billing partner email is required'))
             values.update({
                 'partner': partner,
                 'partner_id': partner_id,
@@ -84,7 +88,7 @@ class PaymentTransaction(models.Model):
                 'billing_partner_address': _partner_format_address(billing_partner.street, billing_partner.street2),
                 'billing_partner_country_id': billing_partner.country_id.id,
                 'billing_partner_country': billing_partner.country_id,
-                'billing_partner_phone': billing_partner.phone or billing_partner.mobile,
+                'billing_partner_phone': billing_partner.phone or billing_partner.mobile or partner.phone or partner.mobile or '',
                 'billing_partner_state': billing_partner.state_id,
             })
             if values.get('partner_name'):
@@ -114,20 +118,20 @@ class PaymentTransaction(models.Model):
                 values['billing_country'] = self.env['res.country'].browse(values.get('billing_partner_country_id'))
 
             address = {
-                'firstName': values['billing_partner_first_name'],
-                'lastName': values['billing_partner_last_name'],
-                'address': values['billing_partner_address'],
-                'city': values['billing_partner_city'],
-                'postalCode': values['billing_partner_zip'],
-                'phone': values['billing_partner_phone'],
-                'countryCode': values['billing_partner_country'].code,
+                'firstName': values['billing_partner_first_name'] or '', #Optional. Can't be False
+                'lastName': values['billing_partner_last_name'] or '', #Optional. Can't be False
+                'address': values['billing_partner_address'] or '', #Optional. Can't be False
+                'city': values['billing_partner_city'] or '', #Optional. Can't be False
+                'postalCode': values['billing_partner_zip'] or '', #Optional. Can't be False
+                'phone': values['billing_partner_phone'] or '', #Optional. Can't be False
+                'countryCode': values['billing_partner_country'].code or '', #Optional. Can't be False
             }
 
             customer_detail = {
-                'firstName': values['billing_partner_first_name'],
-                'lastName': values['billing_partner_last_name'],
-                'email': values['billing_partner_email'],
-                'phoneNumber': values['billing_partner_phone'],
+                'firstName': values['billing_partner_first_name'] or '', #Optional. Can't be False
+                'lastName': values['billing_partner_last_name'] or '', #Optional. Can't be False
+                'email': values['billing_partner_email']  or '', #Optional. Can't be False
+                'phoneNumber': values['billing_partner_phone']  or '', #Optional. Can't be False
                 'billingAddress': address,
                 'shippingAddress': address,
             }
@@ -169,7 +173,7 @@ class PaymentTransaction(models.Model):
         processing_values['callbackUrl'] = urls.url_join(base_url, DuitkuController._callback_url)
         processing_values['returnUrl'] = urls.url_join(base_url, DuitkuController._return_url)
         processing_values['expiryPeriod'] = self.provider_id.duitku_expiry
-        processing_values['phoneNumber'] = processing_values['billing_partner_phone']
+        processing_values['phoneNumber'] = processing_values['billing_partner_phone'] or '' #Optional parameter
         processing_values['merchantCode'] = self.provider_id.duitku_merchant_code
         processing_values['apiKey'] = self.provider_id.duitku_api_key
 
