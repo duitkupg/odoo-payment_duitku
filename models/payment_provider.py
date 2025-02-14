@@ -17,14 +17,29 @@ class PaymentProvider(models.Model):
 
     code = fields.Selection(
         selection_add=[('duitku', 'Duitku Payment')], ondelete={'duitku': 'set default'})
-
-    duitku_merchant_code = fields.Char('Merchant Code', required_if_provider='duitku', groups='base.group_system',
-                                       help='Duitku Merchant Code')
-
-    duitku_api_key = fields.Char('Duitku API Key', required_if_provider='duitku', groups='base.group_system',
-                                 help='Duitku API Key')
+    duitku_merchant_code = fields.Char(
+        string='Merchant Code', required_if_provider='duitku', groups='base.group_system', help='Duitku Merchant Code')
+    duitku_api_key = fields.Char(
+        string='Duitku API Key', required_if_provider='duitku', groups='base.group_system', help='Duitku API Key')
     duitku_expiry = fields.Integer(default=1440)  # Default value in minutes
 
+
+    def _compute_feature_support_fields(self):
+        """ Override of `payment` to enable additional features. """
+        super()._compute_feature_support_fields()
+        self.filtered(lambda p: p.code == 'duitku').update({
+            'is_published': True,
+        })
+
+    # === CONSTRAINT METHODS ===#
+
+
+    def _get_default_payment_method_codes(self):
+        """ Override of `payment` to return the default payment method codes. """
+        default_codes = super()._get_default_payment_method_codes()
+        if self.code != 'duitku':
+            return default_codes
+        return 'duitku'
 
     @api.model
     def _get_compatible_providers(self, *args, currency_id=None, **kwargs):
@@ -83,13 +98,18 @@ class PaymentProvider(models.Model):
         endpoint = endpoint.strip("/")
         url = urls.url_join(self._duitku_get_api_url(), endpoint)
         try:
-            req = requests.post(url=url, data=data, headers=headers, allow_redirects=False)
-            response = req.json()
+            
             if endpoint == 'transactionStatus':
+                req = requests.post(url=url, json=data, headers=headers, allow_redirects=False)
+                response = req.json()
+                _logger.info('Duitku create response for transactionStatus %s', pprint.pformat(response))
                 if response['statusCode'] != '00':
                     raise ValidationError(_("Payment has not been successfully paid but a callback is triggered."
                                             "Could be because someone is trying to cheat the system."))
             if endpoint == 'createInvoice':
+                req = requests.post(url=url, data=data, headers=headers, allow_redirects=False)
+                response = req.json()
+                _logger.info('Duitku create response for CreateInvoice %s', pprint.pformat(response))
                 if req.status_code != 200:
                     _logger.info('There was an error when creating a transasction. The data sent was %s',
                                  pprint.pformat(req))

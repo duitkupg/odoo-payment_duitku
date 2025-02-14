@@ -4,16 +4,17 @@
     'name': "Duitku Payment Acquirer",
     'author': "Duitku",
     'sequence': 100,
-    'description': """Duitku Payment Acquirer""",
+    'description': "Duitku Payment Acquirer",
     'website': "https://www.duitku.com/",
     'summary': 'Payment Acquirer: Duitku Implementation',
-    'category': 'Accounting/Payment Acquirers',
+    'category': 'Accounting/Payment Providers',
     'version': '1.0.0',
     'depends': ['payment'],
     'data': [
         'views/payment_provider_views.xml',
         'views/payment_duitku_templates.xml',
-        'data/duitku_provider_data.xml'
+        'data/payment_method_data.xml',
+        'data/payment_provider_data.xml'
     ],
     'images': [
         'static/src/img/duitku_icon.png',

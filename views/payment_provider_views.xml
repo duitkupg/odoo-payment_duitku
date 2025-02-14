@@ -1,43 +1,39 @@
 <odoo>
-    <data>
-        <record id="payment_provider_form" model="ir.ui.view">
-            <field name="name">acquirer.form.duitku</field>
-            <field name="model">payment.provider</field>
-            <field name="inherit_id" ref="payment.payment_provider_form"/>
-            <field name="arch" type="xml">
-                <group name="provider_credentials" position='inside'>
-                    <group attrs="{'invisible': [('code', '!=', 'duitku')]}">
-                        <field name="duitku_merchant_code"
-                               attrs="{'required':[ ('code', '=', 'duitku'), ('state', '!=', 'disabled')]}"/>
-                        <field name="duitku_api_key"
-                               attrs="{'required':[ ('code', '=', 'duitku'), ('state', '!=', 'disabled')]}"/>
-<!--                        <field name="duitku_environment"-->
-<!--                               attrs="{'required':[ ('code', '=', 'duitku'), ('state', '!=', 'disabled')]}"/>-->
-                        <field name="duitku_expiry"
-                               attrs="{'required':[ ('code', '=', 'duitku'), ('state', '!=', 'disabled')]}"/>
-                    </group>
+    <record id="payment_provider_form" model="ir.ui.view">
+        <field name="name">acquirer.form.duitku</field>
+        <field name="model">payment.provider</field>
+        <field name="inherit_id" ref="payment.payment_provider_form"/>
+        <field name="arch" type="xml">
+            <group name="provider_credentials" position='inside'>
+                <group invisible="code != 'duitku'">
+                    <field name="duitku_merchant_code"
+                            required="code == 'duitku' and state != 'disabled'"/>
+                    <field name="duitku_api_key"
+                            required="code == 'duitku' and state != 'disabled'"/>
+                    <field name="duitku_expiry"
+                            required="code == 'duitku' and state != 'disabled'"/>
                 </group>
-                <group name="provider_credentials" position='after'>
-                    <group attrs="{'invisible': [('code', '!=', 'duitku')]}">
-                        <p colspan="4">Untuk mendapatkan merchant code dan API Key, Silahkan masuk ke
-                            <a href="http://dashboard.duitku.com/Project" target="_blank">halaman project Duitku anda</a>
-                        </p>
-                        <p colspan="4">Jika terjadi kendala pada transaksi silahkan check log pada system log odoo anda</p>
-                    </group>
+            </group>
+            <group name="provider_credentials" position='after'>
+                <group invisible="code != 'duitku'">
+                    <p colspan="4">Untuk mendapatkan merchant code dan API Key, Silahkan masuk ke
+                        <a href="http://dashboard.duitku.com/Project" target="_blank">halaman project Duitku anda</a>
+                    </p>
+                    <p colspan="4">Jika terjadi kendala pada transaksi silahkan check log pada system log odoo anda</p>
                 </group>
-            </field>
-        </record>
+            </group>
+        </field>
+    </record>
 
-        <record id="transaction_form_duitku" model="ir.ui.view">
-            <field name="name">acquirer.transaction.form.duitku</field>
-            <field name="model">payment.transaction</field>
-            <field name="inherit_id" ref="payment.payment_transaction_form"/>
-            <field name="arch" type="xml">
-                <xpath expr="//field[@name='provider_reference']" position="after">
-                    <field name="duitku_reference" readonly="1" attrs="{'invisible': [('provider_code', '!=', 'duitku')]}"/>
-                    <field name="duitku_order_id" readonly="1" attrs="{'invisible': [('provider_code', '!=', 'duitku')]}"/>
-                </xpath>
-            </field>
-        </record>
-    </data>
+    <record id="payment_transaction_form_duitku" model="ir.ui.view">
+        <field name="name">acquirer.transaction.form.duitku</field>
+        <field name="model">payment.transaction</field>
+        <field name="inherit_id" ref="payment.payment_transaction_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='provider_reference']" position="after">
+                <field name="duitku_reference" readonly="1" invisible="provider_code !='duitku'"/>
+                <field name="duitku_order_id" readonly="1" invisible="provider_code !='duitku'"/>
+            </xpath>
+        </field>
+    </record>
 </odoo>
