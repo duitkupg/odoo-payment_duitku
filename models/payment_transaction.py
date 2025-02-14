@@ -177,6 +177,15 @@ class PaymentTransaction(models.Model):
         _logger.info("sending '/createInvoice' request for link creation:\n%s", pprint.pformat(payload))
         payment_data = self.provider_id._duitku_make_request('/createInvoice',data=json.dumps(payload),headers=headers)
         _logger.info("Received invoice request response:\n%s", pprint.pformat(payment_data))
+
+        if self.sale_order_ids:
+            self.sale_order_ids[0].message_post(
+                body="LOG :: payload data Send transaction with request \n ({}) \n and with response \n ({}) \n ".format(payload,payment_data),
+                message_type="notification",
+                subtype_xmlid="mail.mt_note",
+                author_id= self.env.ref("base.user_admin").partner_id.id
+            )
+
         # if the merchantOrderId already exists in Duitku and you try to pay again, the createInvoice return
         # ("MerchantOrderId":"Bill already paid. (Parameter \u0027MerchantOrderId\u0027)")
         # So her we check, if he response is string thne
@@ -250,11 +259,9 @@ class PaymentTransaction(models.Model):
 
         self.duitku_reference = self.provider_reference = notification_data.get('reference')
         self.duitku_order_id = notification_data.get('merchantOrderId')
-        _logger.info(
-            "received data with pending payment status (%s) for transaction with reference %s",
-            self.duitku_reference, self.duitku_order_id
-        )
+
         self._set_pending()
+
         merchant_code = self.provider_id.duitku_merchant_code
         merchant_order_id = notification_data.get('merchantOrderId')
         hashtext = f"{merchant_code}{merchant_order_id}{self.provider_id.duitku_api_key}"
@@ -272,27 +279,32 @@ class PaymentTransaction(models.Model):
         payment_status = notification_data.get('resultCode')
 
         if payment_status == '00':
-            _logger.info(
-                "send payload data (%s)",
-                playload
-            )
+            if self.sale_order_ids:
+                self.sale_order_ids[0].message_post(
+                    body="SUCCESS :: payload data Success transaction ({})".format(notification_data),
+                    message_type="notification",
+                    subtype_xmlid="mail.mt_note",
+                    author_id= self.env.ref("base.user_admin").partner_id.id
+                )
             self.provider_id._duitku_make_request('/transactionStatus', data=playload, headers=headers)
             self._set_done()
-            _logger.info(
-                "received data with sucess payment status (%s) for transaction with reference %s",
-                payment_status, self.reference
-            )
         elif payment_status in ('01', '02'):
+            if self.sale_order_ids:
+                self.sale_order_ids[0].message_post(
+                    body="PENDING :: payload data Pending transaction ({})".format(notification_data),
+                    message_type="notification",
+                    subtype_xmlid="mail.mt_note",
+                    author_id= self.env.ref("base.user_admin").partner_id.id
+                )
             self._set_pending()
-            _logger.info(
-                "received data with pending payment status (%s) for transaction with reference %s",
-                payment_status, self.reference
-            )
         else:
-            _logger.info(
-                "received data with invalid payment status (%s) for transaction with reference %s",
-                payment_status, self.reference
-            )
+            if self.sale_order_ids:
+                self.sale_order_ids[0].message_post(
+                    body="ERROR :: payload data Error transaction ({})".format(notification_data),
+                    message_type="notification",
+                    subtype_xmlid="mail.mt_note",
+                    author_id= self.env.ref("base.user_admin").partner_id.id
+                )
             self._set_error(
                 "Duitku: " + _("Received data with invalid payment status: %s", payment_status)
             )

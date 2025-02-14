@@ -9,8 +9,6 @@ from werkzeug import urls
 from odoo.exceptions import ValidationError
 import pprint
 
-from odoo.addons.payment_duitku import const
-
 _logger = logging.getLogger(__name__)
 
 
@@ -41,7 +39,7 @@ class PaymentProvider(models.Model):
         default_codes = super()._get_default_payment_method_codes()
         if self.code != 'duitku':
             return default_codes
-        return const.DEFAULT_PAYMENT_METHOD_CODES
+        return 'duitku'
 
     @api.model
     def _get_compatible_providers(self, *args, currency_id=None, **kwargs):

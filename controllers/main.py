@@ -20,7 +20,7 @@ class DuitkuController(http.Controller):
         :param dict data: The notification data.
         """
         _logger.info('Duitku customer has returned with post data %s', pprint.pformat(data))
-        request.env['payment.transaction'].sudo()._handle_notification_data('duitku', data)# debug
+        request.env['payment.transaction'].sudo()._handle_notification_data('duitku', data)
         # Redirect the user to the status page.
         return request.redirect('/payment/status')
 
@@ -28,5 +28,5 @@ class DuitkuController(http.Controller):
     @http.route(_callback_url, type='http', auth='public', methods=['POST'], csrf=False)
     def duitku_callback(self, **data):
         _logger.info("Handling redirection from Duitku with data:\n%s", pprint.pformat(data))
-        request.env['payment.transaction'].sudo()._handle_notification_data('duitku', data)# debug
+        request.env['payment.transaction'].sudo()._handle_notification_data('duitku', data)
         return request.redirect('/payment/status')
