@@ -1,13 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <data>
-         <template id="redirect_form">
-            <form t-att-action="api_url" method="post">
-                <input type="hidden" name="merchantOrderId" t-att-value="merchantOrderId"/>
-                <input type="hidden" name="expiryPeriod" t-att-value="expiryPeriod"/>
-                <input type="hidden" name="reference" t-att-value="reference"/>
-                <input type="hidden" name="callMode" value="True"/>
-            </form>
-        </template>
-    </data>
+    <template id="redirect_form">
+        <form t-att-action="api_url" method="post">
+            <input type="hidden" name="merchantOrderId" t-att-value="merchantOrderId"/>
+            <input type="hidden" name="expiryPeriod" t-att-value="expiryPeriod"/>
+            <input type="hidden" name="reference" t-att-value="reference"/>
+            <input type="hidden" name="callMode" value="True"/>
+        </form>
+    </template>
 </odoo>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="payment_method_duitku" model="payment.method">
+        <field name="code">duitku</field>
+        <field name="name">Duitku Payment</field>
+        <field name="sequence">1</field>
+        <field name="image" type="base64" file="payment_duitku/static/src/img/duitku_icon.png"/>
+    </record>
+</odoo>
