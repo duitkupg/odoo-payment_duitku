@@ -254,6 +254,7 @@ class PaymentTransaction(models.Model):
             "received data with pending payment status (%s) for transaction with reference %s",
             self.duitku_reference, self.duitku_order_id
         )
+        self._set_pending()
         merchant_code = self.provider_id.duitku_merchant_code
         merchant_order_id = notification_data.get('merchantOrderId')
         hashtext = f"{merchant_code}{merchant_order_id}{self.provider_id.duitku_api_key}"

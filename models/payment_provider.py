@@ -111,7 +111,7 @@ class PaymentProvider(models.Model):
             if endpoint == 'createInvoice':
                 req = requests.post(url=url, data=data, headers=headers, allow_redirects=False)
                 response = req.json()
-                _logger.info('Duitku create response %s', pprint.pformat(response))
+                _logger.info('Duitku create response for CreateInvoice %s', pprint.pformat(response))
                 if req.status_code != 200:
                     _logger.info('There was an error when creating a transasction. The data sent was %s',
                                  pprint.pformat(req))
