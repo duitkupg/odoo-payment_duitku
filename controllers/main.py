@@ -20,10 +20,6 @@ class DuitkuController(http.Controller):
         :param dict data: The notification data.
         """
         _logger.info('Duitku customer has returned with post data %s', pprint.pformat(data))
-
-        #Not letting return back to check transaction
-        #request.env['payment.transaction'].sudo()._handle_notification_data('duitku', data)
-        
         # Redirect the user to the status page.
         return request.redirect('/payment/status')
 
