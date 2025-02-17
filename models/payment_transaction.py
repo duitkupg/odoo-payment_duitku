@@ -175,15 +175,17 @@ class PaymentTransaction(models.Model):
 
         payload, headers = self._duitku_prepare_payment_request_payload(processing_values)
         _logger.info("sending '/createInvoice' request for link creation:\n%s", pprint.pformat(payload))
+
         payment_data = self.provider_id._duitku_make_request('/createInvoice',data=json.dumps(payload),headers=headers)
         _logger.info("Received invoice request response:\n%s", pprint.pformat(payment_data))
 
+        #Sent Request Log to admin, on each transaction, 
         if self.sale_order_ids:
             self.sale_order_ids[0].message_post(
-                body="LOG :: payload data Send transaction with request \n ({}) \n and with response \n ({}) \n ".format(payload,payment_data),
+                body="LOG :: Request data Send transaction with request \n ({}) \n and with response \n ({}) \n ".format(json.dumps(payload, indent=4), json.dumps(payment_data, indent=4)),
                 message_type="notification",
                 subtype_xmlid="mail.mt_note",
-                author_id= self.env.ref("base.user_admin").partner_id.id
+                author_id= self.env['ir.model.data']._xmlid_to_res_id("base.partner_root")
             )
 
         # if the merchantOrderId already exists in Duitku and you try to pay again, the createInvoice return
@@ -278,32 +280,33 @@ class PaymentTransaction(models.Model):
 
         payment_status = notification_data.get('resultCode')
 
+        #Sent Response Log to admin, on each transaction,
         if payment_status == '00':
             if self.sale_order_ids:
                 self.sale_order_ids[0].message_post(
-                    body="SUCCESS :: payload data Success transaction ({})".format(notification_data),
+                    body="SUCCESS :: Response data Success transaction \n ({})".format(json.dumps(notification_data, indent=4)),
                     message_type="notification",
                     subtype_xmlid="mail.mt_note",
-                    author_id= self.env.ref("base.user_admin").partner_id.id
+                    author_id=self.env['ir.model.data']._xmlid_to_res_id('base.partner_root'),
                 )
             self.provider_id._duitku_make_request('/transactionStatus', data=playload, headers=headers)
             self._set_done()
         elif payment_status in ('01', '02'):
             if self.sale_order_ids:
                 self.sale_order_ids[0].message_post(
-                    body="PENDING :: payload data Pending transaction ({})".format(notification_data),
+                    body="PENDING :: Response data Pending transaction \n ({})".format(json.dumps(notification_data, indent=4)),
                     message_type="notification",
                     subtype_xmlid="mail.mt_note",
-                    author_id= self.env.ref("base.user_admin").partner_id.id
+                    author_id= self.env['ir.model.data']._xmlid_to_res_id("base.partner_root")
                 )
             self._set_pending()
         else:
             if self.sale_order_ids:
                 self.sale_order_ids[0].message_post(
-                    body="ERROR :: payload data Error transaction ({})".format(notification_data),
+                    body="ERROR :: Response data Error transaction \n ({})".format(json.dumps(notification_data, indent=4)),
                     message_type="notification",
                     subtype_xmlid="mail.mt_note",
-                    author_id= self.env.ref("base.user_admin").partner_id.id
+                    author_id= self.env['ir.model.data']._xmlid_to_res_id("base.partner_root")
                 )
             self._set_error(
                 "Duitku: " + _("Received data with invalid payment status: %s", payment_status)
