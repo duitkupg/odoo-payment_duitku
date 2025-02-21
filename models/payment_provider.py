@@ -104,8 +104,16 @@ class PaymentProvider(models.Model):
                 response = req.json()
                 _logger.info('Duitku create response for transactionStatus %s', pprint.pformat(response))
                 if response['statusCode'] != '00':
-                    raise ValidationError(_("Payment has not been successfully paid but a callback is triggered."
-                                            "Could be because someone is trying to cheat the system."))
+                    #Set response Error not a Validation Error for Frontend odoo
+                    return Response(
+                        {
+                            "error": True,
+                            "message": _("Payment has not been successfully paid but a callback is triggered. "
+                                        "Could be because someone is trying to cheat the system."),
+                            "statusCode": response['statusCode']
+                        },
+                        status=400
+                    )
             if endpoint == 'createInvoice':
                 req = requests.post(url=url, data=data, headers=headers, allow_redirects=False)
                 response = req.json()
@@ -114,6 +122,7 @@ class PaymentProvider(models.Model):
                     _logger.info('There was an error when creating a transasction. The data sent was %s',
                                  pprint.pformat(req))
                     _logger.info('Duitku create transaction response %s', pprint.pformat(response))
+                    #Return Validation Error but not for Logging
                     raise ValidationError(_("%s") % response)
         except requests.exceptions.RequestException:
             _logger.exception("unable to communicate with Duitku: %s", url)
