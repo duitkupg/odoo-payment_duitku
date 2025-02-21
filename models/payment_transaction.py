@@ -4,6 +4,7 @@ import json
 import logging
 import hashlib
 import pprint
+import math
 from odoo import api, fields, models, _
 from werkzeug import urls
 from odoo.exceptions import ValidationError
@@ -28,19 +29,19 @@ class PaymentTransaction(models.Model):
     #=== BUSINESS METHODS ===#
     def _duitku_prepare_payment_request_payload(self, values):
         create_payment_values = {
-            'paymentAmount': round(float(values['amount'])),
+            'paymentAmount': math.ceil(float(values['amount'])),
             'merchantOrderId': values['merchantOrderId'],
             'productDetails': values['productDetails'],
+            'email': values['email'] if values.get('email') else '',
             'additionalParam': '',  # Empty for now
-            'merchantUserInfo': values['merchantUserInfo'],
-            'customerVaName': values['customerVaName'],
-            'email': values['email'],
-            'phoneNumber': values['phoneNumber'],
-            'itemDetails': [values['itemDetails']],
-            'customerDetail': values['customerDetail'],
+            'merchantUserInfo': values['merchantUserInfo'] if values.get('merchantUserInfo') else '',
+            'customerVaName': values['customerVaName'] if values.get('customerVaName') else '',
+            'phoneNumber': values['phoneNumber'] if values.get('phoneNumber') else '',
+            'itemDetails': [values['itemDetails']] if values.get('itemDetails') else '',
+            'customerDetail': values['customerDetail'] if values.get('customerDetail') else '',
             'callbackUrl': values['callbackUrl'],
             'returnUrl': values['returnUrl'],
-            'expiryPeriod': int(values['expiryPeriod']),
+            'expiryPeriod': int(values['expiryPeriod']) if values.get('expiryPeriod') else '',
         }
         duitku_signature, timestamp = self.provider_id._duitku_generate_signature(values)
 
@@ -53,6 +54,23 @@ class PaymentTransaction(models.Model):
                 'x-duitku-merchantcode': values['merchantCode']
             }
 
+        #Create Log for Header Request 
+
+        if self.sale_order_ids:
+            self.sale_order_ids[0].message_post(
+                body="({})".format(json.dumps(headers, indent=4)),
+                message_type="notification",
+                subtype_xmlid="mail.mt_note",
+                author_id= self.env['ir.model.data']._xmlid_to_res_id("base.partner_root")
+            )
+
+        if self.sale_order_ids:
+            self.sale_order_ids[0].message_post(
+                body="LOG :: Header Request",
+                message_type="notification",
+                subtype_xmlid="mail.mt_note",
+                author_id= self.env['ir.model.data']._xmlid_to_res_id("base.partner_root")
+            )
         return create_payment_values,headers
     def duitku_prepare_payment_values(self, values):
         partner_id = values.get('partner_id', [])
@@ -134,7 +152,7 @@ class PaymentTransaction(models.Model):
 
             item_details = {
                 'name': '%s: %s' % (self.company_id.name, values['reference']),
-                'price': int(values['amount']),
+                'price': math.ceil(float(values['amount'])),
                 'quantity': 1,
             }
         return item_details, customer_detail, values
@@ -182,11 +200,39 @@ class PaymentTransaction(models.Model):
         #Sent Request Log to admin, on each transaction, 
         if self.sale_order_ids:
             self.sale_order_ids[0].message_post(
-                body="LOG :: Request data Send transaction with request \n ({}) \n and with response \n ({}) \n ".format(json.dumps(payload, indent=4), json.dumps(payment_data, indent=4)),
+                body="({})".format(json.dumps(payload, indent=4)),
                 message_type="notification",
                 subtype_xmlid="mail.mt_note",
                 author_id= self.env['ir.model.data']._xmlid_to_res_id("base.partner_root")
             )
+        if self.sale_order_ids:
+            self.sale_order_ids[0].message_post(
+                body="LOG :: Request data Send transaction",
+                message_type="notification",
+                subtype_xmlid="mail.mt_note",
+                author_id= self.env['ir.model.data']._xmlid_to_res_id("base.partner_root")
+            )
+
+        if self.sale_order_ids:
+            self.sale_order_ids[0].message_post(
+                body="({})".format(json.dumps(payment_data, indent=4)),
+                message_type="notification",
+                subtype_xmlid="mail.mt_note",
+                author_id= self.env['ir.model.data']._xmlid_to_res_id("base.partner_root")
+            )
+        if self.sale_order_ids:
+            self.sale_order_ids[0].message_post(
+                body="LOG :: Response data Send transaction",
+                message_type="notification",
+                subtype_xmlid="mail.mt_note",
+                author_id= self.env['ir.model.data']._xmlid_to_res_id("base.partner_root")
+            )
+
+        # if payment_data.status_code != 200:
+        #     _logger.info('There was an error when creating a transasction. The data sent was %s',
+        #      pprint.pformat(req))
+        #     _logger.info('Duitku create transaction response %s', pprint.pformat(response))
+        #     raise ValidationError(_("%s") % response)
 
         # if the merchantOrderId already exists in Duitku and you try to pay again, the createInvoice return
         # ("MerchantOrderId":"Bill already paid. (Parameter \u0027MerchantOrderId\u0027)")
@@ -284,7 +330,14 @@ class PaymentTransaction(models.Model):
         if payment_status == '00':
             if self.sale_order_ids:
                 self.sale_order_ids[0].message_post(
-                    body="SUCCESS :: Response data Success transaction \n ({})".format(json.dumps(notification_data, indent=4)),
+                    body="({})".format(json.dumps(notification_data, indent=4)),
+                    message_type="notification",
+                    subtype_xmlid="mail.mt_note",
+                    author_id=self.env['ir.model.data']._xmlid_to_res_id('base.partner_root'),
+                )
+            if self.sale_order_ids:
+                self.sale_order_ids[0].message_post(
+                    body="SUCCESS :: Response data Success transaction",
                     message_type="notification",
                     subtype_xmlid="mail.mt_note",
                     author_id=self.env['ir.model.data']._xmlid_to_res_id('base.partner_root'),
@@ -294,7 +347,13 @@ class PaymentTransaction(models.Model):
         elif payment_status in ('01', '02'):
             if self.sale_order_ids:
                 self.sale_order_ids[0].message_post(
-                    body="PENDING :: Response data Pending transaction \n ({})".format(json.dumps(notification_data, indent=4)),
+                    body="({})".format(json.dumps(notification_data, indent=4)),
+                    message_type="notification",
+                    subtype_xmlid="mail.mt_note",
+                    author_id= self.env['ir.model.data']._xmlid_to_res_id("base.partner_root")
+                )
+                self.sale_order_ids[0].message_post(
+                    body="PENDING :: Response data Pending transaction",
                     message_type="notification",
                     subtype_xmlid="mail.mt_note",
                     author_id= self.env['ir.model.data']._xmlid_to_res_id("base.partner_root")
@@ -303,7 +362,14 @@ class PaymentTransaction(models.Model):
         else:
             if self.sale_order_ids:
                 self.sale_order_ids[0].message_post(
-                    body="ERROR :: Response data Error transaction \n ({})".format(json.dumps(notification_data, indent=4)),
+                    body="({})".format(json.dumps(notification_data, indent=4)),
+                    message_type="notification",
+                    subtype_xmlid="mail.mt_note",
+                    author_id= self.env['ir.model.data']._xmlid_to_res_id("base.partner_root")
+                )
+            if self.sale_order_ids:
+                self.sale_order_ids[0].message_post(
+                    body="ERROR :: Response data Error transaction",
                     message_type="notification",
                     subtype_xmlid="mail.mt_note",
                     author_id= self.env['ir.model.data']._xmlid_to_res_id("base.partner_root")

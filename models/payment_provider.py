@@ -114,6 +114,7 @@ class PaymentProvider(models.Model):
                     _logger.info('There was an error when creating a transasction. The data sent was %s',
                                  pprint.pformat(req))
                     _logger.info('Duitku create transaction response %s', pprint.pformat(response))
+                    #Return Validation Error but not for Logging
                     raise ValidationError(_("%s") % response)
         except requests.exceptions.RequestException:
             _logger.exception("unable to communicate with Duitku: %s", url)
