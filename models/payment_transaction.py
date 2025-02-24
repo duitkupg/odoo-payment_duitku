@@ -4,6 +4,8 @@ import json
 import logging
 import hashlib
 import pprint
+import math
+
 from odoo import api, fields, models, _
 from werkzeug import urls
 from odoo.exceptions import ValidationError
@@ -28,7 +30,7 @@ class PaymentTransaction(models.Model):
     #=== BUSINESS METHODS ===#
     def _duitku_prepare_payment_request_payload(self, values):
         create_payment_values = {
-            'paymentAmount': round(float(values['amount'])),
+            'paymentAmount': math.ceil(float(values['amount'])),
             'merchantOrderId': values['merchantOrderId'],
             'productDetails': values['productDetails'],
             'additionalParam': '',  # Empty for now
@@ -56,10 +58,15 @@ class PaymentTransaction(models.Model):
         return create_payment_values,headers
     def duitku_prepare_payment_values(self, values):
         partner_id = values.get('partner_id', [])
+        billing_partner_id = values.get('billing_partner_id', partner_id)
         item_details, customer_detail = {}, {}
         if partner_id:
             partner = self.env['res.partner'].browse(partner_id)
-            billing_partner = self.env['res.partner'].browse(partner_id)
+            billing_partner = self.env['res.partner'].browse(billing_partner_id)
+            company = self.env['res.company'].browse(1) #use company email for an empty email POS
+            #Partner Email Address is required for Duitku Payment
+            if not billing_partner.email and not partner.email and not company.email:
+                raise ValidationError(_('Dutiku: Partner or Billing partner email is required'))
             values.update({
                 'partner': partner,
                 'partner_id': partner_id,
@@ -71,7 +78,7 @@ class PaymentTransaction(models.Model):
                 'partner_address': _partner_format_address(partner.street, partner.street2),
                 'partner_country_id': partner.country_id.id or self.env.company.country_id.id,
                 'partner_country': partner.country_id,
-                'partner_phone': partner.phone,
+                'partner_phone': partner.phone or partner.mobile,
                 'partner_state': partner.state_id,
                 'billing_partner': billing_partner,
                 'billing_partner_id': partner_id,
@@ -84,8 +91,9 @@ class PaymentTransaction(models.Model):
                 'billing_partner_address': _partner_format_address(billing_partner.street, billing_partner.street2),
                 'billing_partner_country_id': billing_partner.country_id.id,
                 'billing_partner_country': billing_partner.country_id,
-                'billing_partner_phone': billing_partner.phone,
+                'billing_partner_phone': billing_partner.phone or billing_partner.mobile or partner.phone or partner.mobile or '',
                 'billing_partner_state': billing_partner.state_id,
+                'company_email': company.email,
             })
             if values.get('partner_name'):
                 values.update({
@@ -114,27 +122,27 @@ class PaymentTransaction(models.Model):
                 values['billing_country'] = self.env['res.country'].browse(values.get('billing_partner_country_id'))
 
             address = {
-                'firstName': values['billing_partner_first_name'],
-                'lastName': values['billing_partner_last_name'],
-                'address': values['billing_partner_address'],
-                'city': values['billing_partner_city'],
-                'postalCode': values['billing_partner_zip'],
-                'phone': values['billing_partner_phone'],
-                'countryCode': values['billing_partner_country'].code,
+                'firstName': values['billing_partner_first_name'] or '', #Optional. Can't be False
+                'lastName': values['billing_partner_last_name'] or '', #Optional. Can't be False
+                'address': values['billing_partner_address'] or '', #Optional. Can't be False
+                'city': values['billing_partner_city'] or '', #Optional. Can't be False
+                'postalCode': values['billing_partner_zip'] or '', #Optional. Can't be False
+                'phone': values['billing_partner_phone'] or '', #Optional. Can't be False
+                'countryCode': values['billing_partner_country'].code or '', #Optional. Can't be False
             }
 
             customer_detail = {
-                'firstName': values['billing_partner_first_name'],
-                'lastName': values['billing_partner_last_name'],
-                'email': values['billing_partner_email'],
-                'phoneNumber': values['billing_partner_phone'],
+                'firstName': values['billing_partner_first_name'] or '', #Optional. Can't be False
+                'lastName': values['billing_partner_last_name'] or '', #Optional. Can't be False
+                'email': values['billing_partner_email'] or '', #Optional. Can't be False
+                'phoneNumber': values['billing_partner_phone'] or '', #Optional. Can't be False
                 'billingAddress': address,
                 'shippingAddress': address,
             }
 
             item_details = {
                 'name': '%s: %s' % (self.company_id.name, values['reference']),
-                'price': int(values['amount']),
+                'price': math.ceil(values['amount']),
                 'quantity': 1,
             }
         return item_details, customer_detail, values
@@ -151,6 +159,7 @@ class PaymentTransaction(models.Model):
         """
         res = super()._get_specific_rendering_values(processing_values)
         # print("Processing Values--", processing_values)
+        _logger.info('values ==> %s', pprint.pformat(dir(processing_values)))
         if self.provider_code != 'duitku':
             return res
 
@@ -165,28 +174,29 @@ class PaymentTransaction(models.Model):
         processing_values['productDetails'] = '%s: %s' % (self.company_id.name, processing_values['reference'])
         processing_values['customerVaName'] = processing_values['billing_partner_first_name']
         processing_values['merchantUserInfo'] = processing_values['billing_partner_first_name']
-        processing_values['email'] = processing_values['billing_partner_email']
+        processing_values['email'] = processing_values['billing_partner_email'] or processing_values['partner_email'] or processing_values['company_email']
         processing_values['callbackUrl'] = urls.url_join(base_url, DuitkuController._callback_url)
         processing_values['returnUrl'] = urls.url_join(base_url, DuitkuController._return_url)
         processing_values['expiryPeriod'] = self.provider_id.duitku_expiry
-        processing_values['phoneNumber'] = processing_values['billing_partner_phone']
+        processing_values['phoneNumber'] = processing_values['billing_partner_phone'] or '' #Optional. Can't be False
         processing_values['merchantCode'] = self.provider_id.duitku_merchant_code
         processing_values['apiKey'] = self.provider_id.duitku_api_key
 
         payload, headers = self._duitku_prepare_payment_request_payload(processing_values)
-        _logger.info("sending '/createInvoice' request for link creation:\n%s", pprint.pformat(payload))
+        _logger.info("sending '/createInvoice' request for link creation:")
+        _logger.info("headers:\n%s", pprint.pformat(headers))
+        _logger.info("data:\n%s", pprint.pformat(payload))
 
         payment_data = self.provider_id._duitku_make_request('/createInvoice',data=json.dumps(payload),headers=headers)
-        _logger.info("Received invoice request response:\n%s", pprint.pformat(payment_data))
 
         #Sent Request Log to admin, on each transaction, 
-        if self.sale_order_ids:
-            self.sale_order_ids[0].message_post(
-                body="LOG :: Request data Send transaction with request \n ({}) \n and with response \n ({}) \n ".format(json.dumps(payload, indent=4), json.dumps(payment_data, indent=4)),
-                message_type="notification",
-                subtype_xmlid="mail.mt_note",
-                author_id= self.env['ir.model.data']._xmlid_to_res_id("base.partner_root")
-            )
+        # if self.sale_order_ids:
+        #     self.sale_order_ids[0].message_post(
+        #         body="LOG :: Request data Send transaction with request \n ({}) \n and with response \n ({}) \n ".format(json.dumps(payload, indent=4), json.dumps(payment_data, indent=4)),
+        #         message_type="notification",
+        #         subtype_xmlid="mail.mt_note",
+        #         author_id= self.env['ir.model.data']._xmlid_to_res_id("base.partner_root")
+        #     )
 
         # if the merchantOrderId already exists in Duitku and you try to pay again, the createInvoice return
         # ("MerchantOrderId":"Bill already paid. (Parameter \u0027MerchantOrderId\u0027)")
@@ -282,32 +292,35 @@ class PaymentTransaction(models.Model):
 
         #Sent Response Log to admin, on each transaction,
         if payment_status == '00':
-            if self.sale_order_ids:
-                self.sale_order_ids[0].message_post(
-                    body="SUCCESS :: Response data Success transaction \n ({})".format(json.dumps(notification_data, indent=4)),
-                    message_type="notification",
-                    subtype_xmlid="mail.mt_note",
-                    author_id=self.env['ir.model.data']._xmlid_to_res_id('base.partner_root'),
-                )
+            # if self.sale_order_ids:
+            #     self.sale_order_ids[0].message_post(
+            #         body="SUCCESS :: Response data Success transaction \n ({})".format(json.dumps(notification_data, indent=4)),
+            #         message_type="notification",
+            #         subtype_xmlid="mail.mt_note",
+            #         author_id=self.env['ir.model.data']._xmlid_to_res_id('base.partner_root'),
+            #     )
+            _logger.info("sending '/transactionStatus' request for check transaction:")
+            _logger.info("headers:\n%s", pprint.pformat(headers))
+            _logger.info("data:\n%s", pprint.pformat(payload))
             self.provider_id._duitku_make_request('/transactionStatus', data=playload, headers=headers)
             self._set_done()
         elif payment_status in ('01', '02'):
-            if self.sale_order_ids:
-                self.sale_order_ids[0].message_post(
-                    body="PENDING :: Response data Pending transaction \n ({})".format(json.dumps(notification_data, indent=4)),
-                    message_type="notification",
-                    subtype_xmlid="mail.mt_note",
-                    author_id= self.env['ir.model.data']._xmlid_to_res_id("base.partner_root")
-                )
+            # if self.sale_order_ids:
+            #     self.sale_order_ids[0].message_post(
+            #         body="PENDING :: Response data Pending transaction \n ({})".format(json.dumps(notification_data, indent=4)),
+            #         message_type="notification",
+            #         subtype_xmlid="mail.mt_note",
+            #         author_id= self.env['ir.model.data']._xmlid_to_res_id("base.partner_root")
+            #     )
             self._set_pending()
         else:
-            if self.sale_order_ids:
-                self.sale_order_ids[0].message_post(
-                    body="ERROR :: Response data Error transaction \n ({})".format(json.dumps(notification_data, indent=4)),
-                    message_type="notification",
-                    subtype_xmlid="mail.mt_note",
-                    author_id= self.env['ir.model.data']._xmlid_to_res_id("base.partner_root")
-                )
+            # if self.sale_order_ids:
+            #     self.sale_order_ids[0].message_post(
+            #         body="ERROR :: Response data Error transaction \n ({})".format(json.dumps(notification_data, indent=4)),
+            #         message_type="notification",
+            #         subtype_xmlid="mail.mt_note",
+            #         author_id= self.env['ir.model.data']._xmlid_to_res_id("base.partner_root")
+            #     )
             self._set_error(
                 "Duitku: " + _("Received data with invalid payment status: %s", payment_status)
             )
