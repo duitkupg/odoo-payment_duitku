@@ -278,7 +278,7 @@ class PaymentTransaction(models.Model):
         merchant_order_id = notification_data.get('merchantOrderId')
         hashtext = f"{merchant_code}{merchant_order_id}{self.provider_id.duitku_api_key}"
         signature = hashlib.md5(hashtext.encode('utf-8')).hexdigest()
-        playload = {
+        payload = {
             'merchantCode': merchant_code,
             'merchantOrderId': merchant_order_id,
             'signature': signature,
@@ -302,7 +302,7 @@ class PaymentTransaction(models.Model):
             _logger.info("sending '/transactionStatus' request for check transaction:")
             _logger.info("headers:\n%s", pprint.pformat(headers))
             _logger.info("data:\n%s", pprint.pformat(payload))
-            self.provider_id._duitku_make_request('/transactionStatus', data=playload, headers=headers)
+            self.provider_id._duitku_make_request('/transactionStatus', data=payload, headers=headers)
             self._set_done()
         elif payment_status in ('01', '02'):
             # if self.sale_order_ids:
