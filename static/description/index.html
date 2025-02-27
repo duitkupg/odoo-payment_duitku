@@ -9,7 +9,11 @@
                 Duitku Integration for Odoo payment acquirer
                 <br/>
                 Do you want the best solution to accept Credit Cards, e-wallet, and Various Bank Transfers on your website? Our Payment Gateway for payments integrates with your e=commerce and lets you accept those payments through our payment gateway.
-                Securely accept major credit cards, View and manage transactions from one convenient place – <a href="https://sandbox.duitku.com/merchant/Project">your Duitku dashboard</a>.
+                Securely accept major credit cards, View and manage transactions from one convenient place – 
+				<a href="https://sandbox.duitku.com/merchant/Project">
+					your Duitku dashboard
+				</a>
+				.
 			</p>
 		</div>
 	</div>
@@ -18,20 +22,173 @@
 <section class="oe_container oe_dark">
 	<div class="oe_row oe_spaced">
 		<div>
-			<h2 class="oe_slogan">Installation</h2>
+			<h2 class="oe_slogan">How to Install and Configure Duitku Payment</h2>
 		</div>
 		<div>
-			<p class="oe_mt32">For installation to the Odoo you might download this code. Then, drop the folder to the <a href="https://www.google.com/search?rlz=1C1GCEU_enID969ID969&sxsrf=ALiCzsZONTAyLMHdFUsFG_-kRZb73pxHWQ%3A1660796744026&lei=SL_9YsSWAYje4-EP8-6fuAY&q=odoo%2014%20addons%20path&ved=2ahUKEwjE2uL_xc_5AhUI7zgGHXP3B2cQsKwBKAJ6BAg9EAM&biw=1920&bih=937&dpr=1">addons path</a>, then rename it as <strong>payment_duitku</strong>. After it's done you may follow steps on below.
-			<ul>
-				<li>Go to your Apps list on Odoo.</li>
-				<li>Find <strong>Duitku Payment Acquirer</strong>. Then, click install.</li>
-				<li>Go to the Website.</li>
-				<li>On the Website menu go to the Configuration -> eCommerce -> Payment Acquirers.</li>
-				<li>On the list Payment Acquirers click on Duitku Payment.</li>
-				<li>Edit the payment and fill with your Duitku credentials. (If you don't have any credentials you might start from creating project on Duitku Dashboard).</li>
-				<li>Click save and done.</li>
-			</ul>
-            You've finish the installation process. You might see the Duitku payment on the checkout payment list.
+			<h3 class="oe_slogan">Installation and Activating</h3>
+		</div>
+		<div>
+			<p class="oe_mt32">
+				To install Duitku Payment in Odoo, follow these steps:
+				<ol>
+					<li>Download the Duitku Payment module.</li>
+					<li>
+						Place the folder in the 
+						<a href="https://www.odoo.com/documentation/18.0/id/search.html?q=addons+path&area=default&check_keywords=yes">
+							addons path
+						</a>. Rename the folder as <code>payment_duitku</code>.
+					</li>
+					<li>Restart Odoo to recognize the new module.</li>
+					<li>Activate the module in the Apps menu.</li>
+				</ol>
+			</p>
+		</div>
+		<div>
+			<h3 class="oe_slogan">Configuring Duitku Payment for Sales</h3>
+		</div>
+		<div>
+			<p class="oe_mt32">
+				Before activating Duitku Payment, ensure that the Sales Apps is installed. Once installed, follow these steps:
+				<ol>
+					<li>
+						Navigate to Payment Providers:
+						<ul>
+							<li>
+								Click the square icon in the top-left corner and select <strong>Sales</strong>.
+							</li>
+							<li>
+								Go to <strong>Configuration</strong> > <strong>Online Payments</strong> > <strong>Payment Providers</strong>.
+							</li>
+						</ul>
+					</li>
+					<li>
+						Enable Duitku Payment:
+						<ul>
+							<li>
+								Click on <strong>Duitku Payment</strong> to open its configuration.
+							</li>
+							<li>
+								Set <strong>State</strong> to <strong>Enable</strong> for <code>Production</code> or <strong>Test Mode</strong> for <code>sandbox</code>.
+							</li>
+							<li>
+								Enter the <strong>Merchant Code</strong> and <strong>API Key</strong> corresponding to the selected mode.
+							</li>
+						</ul>
+					</li>
+					<li>
+						Activate Payment Methods:
+						<ul>
+							<li>
+								From <b>Sales Apps</b>, go to <strong>Configuration</strong> > <strong>Online Payments</strong> > <strong>Payment Methods</strong>.
+							</li>
+							<li>
+								Ensure <strong>Duitku Payment</strong> is active so it appears as a payment option for clients.
+							</li>
+						</ul>
+					</li>
+				</ol>
+			</p>
+		</div>
+		<div>
+			<h3 class="oe_slogan">Configuring Duitku Payment for E-commerce</h3>
+		</div>
+		<div>
+			<p class="oe_mt32">
+				Before activating Duitku Payment, ensure that the  E-commerce Apps is installed. Once installed, follow these steps:
+				<ol>
+					<li>
+						Navigate to Payment Providers:
+						<ul>
+							<li>
+								Click the square icon in the top-left corner and select <strong>Website</strong>.
+							</li>
+							<li>
+								Go to <strong>Configuration</strong> > <strong>eCommerce</strong> > <strong>Payment Providers</strong>.
+							</li>
+						</ul>
+					</li>
+					<li>
+						Enable Duitku Payment:
+						<ul>
+							<li>
+								Click on <strong>Duitku Payment</strong> to open its configuration.
+							</li>
+							<li>
+								Set <strong>State</strong> to <strong>Enable</strong> for <code>Production</code> or <strong>Test Mode</strong> for <code>sandbox</code>.
+							</li>
+							<li>
+								Enter the <strong>Merchant Code</strong> and <strong>API Key</strong> corresponding to the selected mode.
+							</li>
+						</ul>
+					</li>
+					<li>
+						Activate Payment Methods:
+						<ul>
+							<li>
+								From <b>Sales Apps</b>, go to <strong>Configuration</strong> > <strong>eCommerce</strong> > <strong>Payment Methods</strong>.
+							</li>
+							<li>
+								Ensure <strong>Duitku Payment</strong> is active so it appears as a payment option for clients.
+							</li>
+						</ul>
+					</li>
+				</ol>
+			</p>
+		</div>
+		<div>
+			<h3 class="oe_slogan">Configuring Duitku Payment for Point of Sale (POS)</h3>
+		</div>
+		<div>
+			<p class="oe_mt32">
+				Before activating Duitku Payment, ensure that the  E-Point of Sale Apps is installed. Once installed, follow these steps:
+				<ol>
+					<li>
+						Navigate to Payment Providers:
+						<ul>
+							<li>
+								Click the square icon in the top-left corner and select <strong>Point of Sale</strong>.
+							</li>
+							<li>
+								Go to <strong>Configuration</strong> > <strong>Payment Methods</strong>.
+							</li>
+						</ul>
+					</li>
+					<li>
+						Create a New Payment Method:
+						<ul>
+							<li>
+								Name the method <strong>Duitku Payment</strong> (Possible use another name such as "Online Payments").
+							</li>
+							<li>
+								Check <strong>Online Payment</strong>.
+							</li>
+							<li>
+								In <strong>Allowed Providers</strong>, select <strong>Duitku Payment</strong>.
+							</li>
+						</ul>
+					</li>
+					<li>
+						Verify Activation:
+						<ul>
+							<li>
+								Ensure the new payment method appears in the <strong>Payment Methods List</strong>.
+							</li>
+							<li>
+								If missing, go to <strong>Configuration</strong> > <strong>Settings</strong>.
+							</li>
+							<li>
+								Select the relevant POS and confirm <strong>Duitku Payment</strong> is listed under <strong>Payment Methods</strong>.
+							</li>
+							<li>
+								If not, manually add it.
+							</li>
+						</ul>
+					</li>
+				</ol>
+				By following these steps, Duitku Payment will be successfully installed and configured in Odoo for Sales, E-commerce, and POS. 
+				<a href="https://www.youtube.com/watch?v=pcnPcEjnVtA">
+					Click here to see the integration tutorial on Youtube!
+				</a>
 			</p>
 		</div>
 
