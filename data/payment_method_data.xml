@@ -4,6 +4,6 @@
         <field name="code">duitku</field>
         <field name="name">Duitku Payment</field>
         <field name="sequence">1</field>
-        <field name="image" type="base64" file="payment_duitku/static/src/img/duitku_icon.png"/>
+        <field name="image" type="base64" file="payment_duitku/static/description/icon.png"/>
     </record>
 </odoo>
