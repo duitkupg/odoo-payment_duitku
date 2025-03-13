@@ -27,5 +27,5 @@ class DuitkuController(http.Controller):
     @http.route(_callback_url, type='http', auth='public', methods=['POST'], csrf=False)
     def duitku_callback(self, **data):
         _logger.info("Handling redirection from Duitku with data:\n%s", pprint.pformat(data))
-        request.env['payment.transaction'].sudo()._handle_notification_data('duitku', data)# debug
+        request.env['payment.transaction'].sudo()._handle_notification_data('duitku', data)
         return request.redirect('/payment/status')
