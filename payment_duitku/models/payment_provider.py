@@ -83,8 +83,13 @@ class PaymentProvider(models.Model):
         endpoint = endpoint.strip("/")
         url = urls.url_join(self._duitku_get_api_url(), endpoint)
         try:
-            req = requests.post(url=url, data=data, headers=headers, allow_redirects=False)
+            req = requests.post(url=url, json=data, headers=headers, allow_redirects=False)
+            body = req.request.body
+            if isinstance(body, bytes):
+                body = body.decode()
             response = req.json()
+            _logger.info('Duitku request for {endpoint} \n {request} \n {body}'.format(endpoint=endpoint,request=pprint.pformat(dict(req.request.headers)),body=body))
+            _logger.info('Duitku response for {endpoint} \n {response}'.format(endpoint=endpoint,response=pprint.pformat(response)))
             if endpoint == 'transactionStatus':
                 if response['statusCode'] != '00':
                     raise ValidationError(_("Payment has not been successfully paid but a callback is triggered."
