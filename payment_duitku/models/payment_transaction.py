@@ -175,7 +175,7 @@ class PaymentTransaction(models.Model):
 
         payload, headers = self._duitku_prepare_payment_request_payload(processing_values)
         _logger.info("sending '/createInvoice' request for link creation:\n%s", pprint.pformat(payload))
-        payment_data = self.provider_id._duitku_make_request('/createInvoice',data=json.dumps(payload),headers=headers)
+        payment_data = self.provider_id._duitku_make_request('/createInvoice',data=payload,headers=headers)
 
         # if the merchantOrderId already exists in Duitku and you try to pay again, the createInvoice return
         # ("MerchantOrderId":"Bill already paid. (Parameter \u0027MerchantOrderId\u0027)")

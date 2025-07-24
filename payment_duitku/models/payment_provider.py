@@ -83,7 +83,7 @@ class PaymentProvider(models.Model):
         endpoint = endpoint.strip("/")
         url = urls.url_join(self._duitku_get_api_url(), endpoint)
         try:
-            req = requests.post(url=url, data=data, headers=headers, allow_redirects=False)
+            req = requests.post(url=url, json=data, headers=headers, allow_redirects=False)
             response = req.json()
             if endpoint == 'transactionStatus':
                 if response['statusCode'] != '00':
