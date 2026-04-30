@@ -3,6 +3,7 @@
 import json
 import logging
 import hashlib
+import hmac
 import pprint
 import math
 
@@ -276,8 +277,8 @@ class PaymentTransaction(models.Model):
 
         merchant_code = self.provider_id.duitku_merchant_code
         merchant_order_id = notification_data.get('merchantOrderId')
-        hashtext = f"{merchant_code}{merchant_order_id}{self.provider_id.duitku_api_key}"
-        signature = hashlib.md5(hashtext.encode('utf-8')).hexdigest()
+        hashtext = f"{merchant_code}{merchant_order_id}"
+        signature = hmac.new(self.provider_id.duitku_api_key.encode('utf-8'), hashtext.encode('utf-8'), hashlib.sha256).hexdigest()
         payload = {
             'merchantCode': merchant_code,
             'merchantOrderId': merchant_order_id,

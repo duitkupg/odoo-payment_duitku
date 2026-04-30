@@ -2,6 +2,7 @@
 
 import logging
 import hashlib
+import hmac
 import requests
 import datetime
 from odoo import api, fields, models, _
@@ -78,8 +79,8 @@ class PaymentProvider(models.Model):
         timestamp = str(round(datetime.datetime.timestamp(present_date) * 1000))
         merchant_code = values['merchantCode']
         api_key = values['apiKey']
-        encrytion_text = (merchant_code + str(timestamp) + api_key)
-        return hashlib.sha256(encrytion_text.encode('utf-8')).hexdigest() , timestamp
+        encrytion_text = (merchant_code + str(timestamp) )
+        return hmac.new(api_key.encode('utf-8'), encrytion_text.encode('utf-8'), hashlib.sha256).hexdigest() , timestamp
 
     def _duitku_make_request(self, endpoint, data=None,headers=None, method='POST'):
         """ Make a request at duitku endpoint.
